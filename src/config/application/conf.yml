@@ -1,2 +1,8 @@
 development:
     mode: on
+database:
+    type: 'mysql'
+    dbname: 'IUTPROJECT'
+    host: 'localhost'
+    user: 'root'
+    password: ''

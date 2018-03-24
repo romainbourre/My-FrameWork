@@ -15,9 +15,9 @@ use System\Exceptions\HttpNotFoundException;
 class System {
 
     /**
-     * Configuration path
+     * App configuration file path
      */
-    private const CONF_PATH = "config/";
+    public const APP_CONF_FILE = "config/application/conf.yml";
 
     /**
      * Instance of system
@@ -58,7 +58,14 @@ class System {
         // Activate Autoloader
         require_once "AutoLoader.php";
 
-        $this->_application_conf = yaml_parse(file_get_contents(ROOT . self::CONF_PATH . 'application/conf.yml'));
+        $this->_application_conf = yaml_parse(file_get_contents(ROOT . self::APP_CONF_FILE));
+
+    }
+
+    /**
+     * Start Framework
+     */
+    public function start(): void {
 
         try {
 
@@ -78,14 +85,22 @@ class System {
     }
 
     /**
+     * Get configuration of app
+     * @return array|null
+     */
+    public function getAppConf(): ?array {
+        return $this->_application_conf;
+    }
+
+    /**
      * Load instance of System
      * @return System
      */
-    public static function start() {
+    public static function get(): System {
         if(is_null(self::$_instance)) self::$_instance = new self();
         return self::$_instance;
     }
 
 }
 
-System::start();
+return System::get();

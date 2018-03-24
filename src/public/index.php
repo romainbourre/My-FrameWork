@@ -1,1 +1,1 @@
-<?php require_once __DIR__ . '/../System/System.php';
+<?php (require_once(__DIR__ . '/../System/System.php'))->start();
