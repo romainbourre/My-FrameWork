@@ -26,7 +26,7 @@ class Controller {
      * Controller constructor.
      * @param String $url
      */
-    public function __construct(String $url) {
+    public function __construct(String $url = null) {
         $this->dirPath = ROOT . substr($path = str_replace("\\", "/", get_class($this)),0, strrpos($path, "/", -1));
         $this->url = $url;
     }
