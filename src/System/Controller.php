@@ -1,6 +1,7 @@
 <?php
 
 namespace System;
+use System\Interfaces\WebPage;
 
 /**
  * Class Controller
@@ -8,13 +9,7 @@ namespace System;
  * @package System
  * @author Romain Bourré
  */
-class Controller {
-
-    /**
-     * Web page url
-     * @var null|String
-     */
-    private $url = null;
+class Controller implements WebPage {
 
     /**
      * Path of web page
@@ -24,19 +19,9 @@ class Controller {
 
     /**
      * Controller constructor.
-     * @param String $url
      */
-    public function __construct(String $url = null) {
+    public function __construct() {
         $this->dirPath = ROOT . substr($path = str_replace("\\", "/", get_class($this)),0, strrpos($path, "/", -1));
-        $this->url = $url;
-    }
-
-    /**
-     * Get web url of web page
-     * @return String
-     */
-    public function getLink(): String {
-        return $this->url;
     }
 
     /**

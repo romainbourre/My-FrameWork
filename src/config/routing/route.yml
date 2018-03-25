@@ -1,3 +1,4 @@
+# Example to load default page
 default:
     url: /
     class: WebPage\DefaultWebPage\DefaultWebPage::indexAction

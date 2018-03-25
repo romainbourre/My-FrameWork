@@ -6,6 +6,7 @@ use System\FrameworkWebPage\ExceptionsWebPage\ExceptionsWebPage;
 use System\Http\Request;
 use System\Http\Response;
 use System\Exceptions\HttpNotFoundException;
+use \Exception;
 
 /**
  * Framework System
@@ -57,6 +58,8 @@ class System {
 
         // Activate Autoloader
         require_once "AutoLoader.php";
+        // Load tool
+        require_once "tools.php";
 
         $this->_application_conf = yaml_parse(file_get_contents(ROOT . self::APP_CONF_FILE));
 
@@ -71,14 +74,14 @@ class System {
 
             $this->_request = new Request();
 
-            $this->_response = Router::getInstance()->findURL($this->_request, $_SERVER['REQUEST_URI']);
+            $this->_response = Router::getInstance()->findResponseURL($this->_request);
             echo $this->_response;
 
         }
         catch(HttpNotFoundException $e) {
             if(isset($this->_application_conf['development']['mode']) && $this->_application_conf['development']['mode']) echo (new ExceptionsWebPage())->indexAction($e);
         }
-        catch (\Exception $e) {
+        catch (Exception $e) {
             if(isset($this->_application_conf['development']['mode']) && $this->_application_conf['development']['mode']) echo (new ExceptionsWebPage())->indexAction($e);
         }
 
