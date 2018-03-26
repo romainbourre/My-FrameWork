@@ -3,6 +3,7 @@
 namespace System;
 
 use System\Exceptions\ClassNotExtendsControllerException;
+use System\Exceptions\IncorrectFormatConfigurationFileException;
 use System\Exceptions\IncorrectParameterRouteException;
 use System\Exceptions\TooFewParametersException;
 use System\Exceptions\TooManyParametersException;
@@ -50,6 +51,11 @@ class Route {
      */
     private $parameters = null;
 
+    private $auth_class = null;
+    private $auth_method = null;
+    private $auth_expected = null;
+    private $auth_redirect = null;
+
     /**
      * @var null Web page of route
      */
@@ -73,6 +79,22 @@ class Route {
         if(isset($action[1]) && method_exists($this->class, $action[1])) $this->method = $action[1]; else throw new UndefinedRouteMethodException($name, $action[1]);
         if(isset($data['params'])) $this->regex = $data['params'];
         $this->findParameters();
+
+        if(isset($data['auth'])) {
+            if(!is_array($data['auth']) || !isset($data['auth']['class']) || empty($data['auth']['class']) || !isset($data['auth']['expected']) || empty($data['auth']['expected'])) throw new IncorrectFormatConfigurationFileException(Router::ROUTING_CONF);
+            $arrayClass = explode('::', $data['auth']['class']);
+            if(sizeof($arrayClass) != 2) throw new IncorrectFormatConfigurationFileException(Router::ROUTING_CONF);
+            if(class_exists($arrayClass[0])) {
+                if(method_exists($arrayClass[0], $arrayClass[1])) {
+                    $this->auth_class = $arrayClass[0];
+                    $this->auth_method = $arrayClass[1];
+                    $this->auth_expected = $data['auth']['expected'];
+                    if (isset($data['auth']['redirect'])) $this->auth_redirect = $data['auth']['redirect'];
+                }else throw new UndefinedRouteMethodException($name, $arrayClass[1]);
+            } else throw new UndefinedRouteClassException($name);
+
+        }
+
     }
 
     /**
@@ -187,6 +209,20 @@ class Route {
      * @throws \Exception
      */
     public function action(array $parameters): Response {
+        if(!is_null($this->auth_class) && !is_null($this->auth_method) && !is_null($this->auth_expected)) {
+            $authClass = new $this->auth_class();
+            $returnAuthValue = call_user_func(array($authClass, $this->auth_method));
+            if($this->auth_expected != $returnAuthValue) {
+                if(!is_null($this->auth_redirect) && !empty($this->auth_redirect)) {
+                    $newRoute = Router::getInstance()->find($this->auth_redirect);
+                    if(is_null($newRoute->parameters)) {
+                        header('Location: ' . $newRoute->url);
+                        exit;
+                    }
+                }
+                return new Response();
+            }
+        }
         $this->load();
         return call_user_func_array(array($this->webpage, $this->method), $parameters);
     }
