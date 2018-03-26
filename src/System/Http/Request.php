@@ -24,7 +24,8 @@ class Request {
      * Request constructor.
      */
     public function __construct() {
-        $this->url = substr($_SERVER['REQUEST_URI'], 0, strrpos($_SERVER['REQUEST_URI'], "?"));
+        if(!($endPos = strrpos($_SERVER['REQUEST_URI'], "?"))) $endPos = strlen($_SERVER['REQUEST_URI']);
+        $this->url = substr($_SERVER['REQUEST_URI'], 0, $endPos);
         $this->header = apache_request_headers();
         if(isset($_POST) && !empty($_POST)) {
             $_SESSION['POST'] = $_POST;
