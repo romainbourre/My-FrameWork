@@ -23,7 +23,7 @@ class Router {
     /**
      * Path file configuration of Router
      */
-    private const ROUTING_CONF = 'config/routing/route.yml';
+    const ROUTING_CONF = 'config/routing/route.yml';
 
     /**
      * Instance of Router
