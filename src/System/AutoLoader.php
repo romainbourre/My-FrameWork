@@ -23,7 +23,7 @@ class AutoLoader {
      */
     private static function systemAutoloader(String $className): void {
         $className = str_replace("\\", "/", $className);
-        include (ROOT . "$className.php");
+        @include (ROOT . "$className.php");
     }
 
 }
