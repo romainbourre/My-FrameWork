@@ -51,9 +51,24 @@ class Route {
      */
     private $parameters = null;
 
+    /**
+     * @var null|String Class asked to authentication of routing
+     */
     private $auth_class = null;
+
+    /**
+     * @var null|String Method asked to authentication of routing
+     */
     private $auth_method = null;
+
+    /**
+     * @var mixed|null Expected value to authentication
+     */
     private $auth_expected = null;
+
+    /**
+     * @var mixed|null Redirection route when authentication reject
+     */
     private $auth_redirect = null;
 
     /**
@@ -79,22 +94,19 @@ class Route {
         if(isset($action[1]) && method_exists($this->class, $action[1])) $this->method = $action[1]; else throw new UndefinedRouteMethodException($name, $action[1]);
         if(isset($data['params'])) $this->regex = $data['params'];
         $this->findParameters();
-
         if(isset($data['auth'])) {
-            if(!is_array($data['auth']) || !isset($data['auth']['class']) || empty($data['auth']['class']) || !isset($data['auth']['expected']) || empty($data['auth']['expected'])) throw new IncorrectFormatConfigurationFileException(Router::ROUTING_CONF);
+            if(!is_array($data['auth']) || !isset($data['auth']['class']) || empty($data['auth']['class'])) throw new IncorrectFormatConfigurationFileException(Router::ROUTING_CONF);
             $arrayClass = explode('::', $data['auth']['class']);
             if(sizeof($arrayClass) != 2) throw new IncorrectFormatConfigurationFileException(Router::ROUTING_CONF);
             if(class_exists($arrayClass[0])) {
                 if(method_exists($arrayClass[0], $arrayClass[1])) {
                     $this->auth_class = $arrayClass[0];
                     $this->auth_method = $arrayClass[1];
-                    $this->auth_expected = $data['auth']['expected'];
+                    $this->auth_expected = $data['auth']['expected'] ?? null;
                     if (isset($data['auth']['redirect'])) $this->auth_redirect = $data['auth']['redirect'];
                 }else throw new UndefinedRouteMethodException($name, $arrayClass[1]);
             } else throw new UndefinedRouteClassException($name);
-
         }
-
     }
 
     /**
@@ -209,7 +221,7 @@ class Route {
      * @throws \Exception
      */
     public function action(array $parameters): Response {
-        if(!is_null($this->auth_class) && !is_null($this->auth_method) && !is_null($this->auth_expected)) {
+        if(!is_null($this->auth_class) && !is_null($this->auth_method)) {
             $authClass = new $this->auth_class();
             $returnAuthValue = call_user_func(array($authClass, $this->auth_method));
             if($this->auth_expected != $returnAuthValue) {
