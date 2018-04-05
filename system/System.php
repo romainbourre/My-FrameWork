@@ -60,7 +60,7 @@ class System {
         // Activate Autoloader
         require_once "AutoLoader.php";
         // Activate vendor autoloader
-        @require_once ROOT . 'vendor/autoloader.php';
+        @require_once ROOT . 'vendor/autoload.php';
         // Load tool
         require_once "tools.php";
 
