@@ -55,6 +55,7 @@ class System {
         // Define root path
         $_DIR = str_replace("\\", "/", __DIR__);
         define('ROOT', substr($_DIR, 0, strpos($_DIR, "System")));
+        define('SRC', ROOT . 'src/');
 
         // Activate Autoloader
         require_once "AutoLoader.php";
