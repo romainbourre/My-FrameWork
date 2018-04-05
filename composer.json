@@ -1,0 +1,12 @@
+{
+    "name": "romainbourre/my-framework",
+    "description": "My PHP framework",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Romain",
+            "email": "rom.bourre@gmail.com"
+        }
+    ],
+    "require": {}
+}
