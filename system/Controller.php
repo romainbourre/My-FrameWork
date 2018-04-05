@@ -15,13 +15,13 @@ class Controller implements WebPage {
      * Path of web page
      * @var null|string
      */
-    private $dirPath = null;
+    protected $dirPath = null;
 
     /**
      * Controller constructor.
      */
     public function __construct() {
-        $this->dirPath = ROOT . substr($path = str_replace("\\", "/", get_class($this)),0, strrpos($path, "/", -1));
+        $this->dirPath = SRC . substr($path = str_replace("\\", "/", get_class($this)),0, strrpos($path, "/", -1));
     }
 
     /**
