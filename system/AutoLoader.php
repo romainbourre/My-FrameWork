@@ -15,6 +15,7 @@ class AutoLoader {
      */
     public static function register() {
         spl_autoload_register(array(__CLASS__, 'systemAutoloader'));
+        spl_autoload_register(array(__CLASS__, 'sourceAutoloader'));
     }
 
     /**
@@ -25,6 +26,16 @@ class AutoLoader {
         $className = str_replace("\\", "/", $className);
         @include (ROOT . "$className.php");
     }
+
+    /**
+     * Source class autoloader
+     * @param String $className
+     */
+    private static function sourceAutoloader(String $className): void {
+        $className = str_replace("\\", "/", $className);
+        @include (ROOT . "src/$className.php");
+    }
+
 
 }
 
