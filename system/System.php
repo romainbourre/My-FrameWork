@@ -50,8 +50,6 @@ class System {
      */
     private function __construct() {
 
-        session_start();
-
         // Define root path
         $_DIR = str_replace("\\", "/", __DIR__);
         define('ROOT', substr($_DIR, 0, strpos($_DIR, "System")));
@@ -65,6 +63,8 @@ class System {
         require_once "tools.php";
 
         $this->_application_conf = yaml_parse(file_get_contents(ROOT . self::APP_CONF_FILE));
+
+        session_start();
 
     }
 
