@@ -53,6 +53,14 @@ class Request {
     }
 
     /**
+     * Unset GET and POST variable
+     */
+    public function resetVar(): void {
+        unset($_SESSION['POST']);
+        unset($_SESSION['GET']);
+    }
+
+    /**
      * @return string url of request
      */
     public function getUrl(): string {
