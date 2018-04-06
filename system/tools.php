@@ -31,7 +31,17 @@ function url(String $nameRoute, ...$params) {
  * @throws \System\Exceptions\UndefinedRouteClassException
  * @throws \System\Exceptions\UndefinedRouteMethodException
  * @throws \System\Exceptions\UndefinedRouteUrlException
+ * @throws Exception
  */
 function url_max(String $nameRoute, ...$params) {
     return 'http://' . $_SERVER['HTTP_HOST'] . \System\Router::getInstance()->find($nameRoute)->getUrl($params);
+}
+
+/**
+ * Load file to html
+ * @param String $file path of file
+ * @return string url
+ */
+function load(String $file) {
+    return 'http://' . $_SERVER['HTTP_HOST'] . "/$file";
 }
