@@ -10,14 +10,39 @@ namespace System\Http;
  */
 class Response {
 
+    public const HTTP_CODE_SUCCESS = 200;
+    public const HTTP_CODE_P_REDIRECTION = 301;
+    public const HTTP_CODE_T_REDIRECTION = 302;
+    public const HTTP_CODE_NOAUTH = 401;
+    public const HTTP_CODE_DENIED = 403;
+    public const HTTP_CODE_NOFOUND = 404;
+
     /**
      * Body content of response
      * @var null
      */
-    private $_content = null;
+    private $_content;
 
-    public function __construct(String $content = null) {
-        if(!is_null($content)) $this->_content = $content;
+    /**
+     * @var int http response code
+     */
+    private $_http_response_code;
+
+    /**
+     * @var array response header
+     */
+    private $_header;
+
+    /**
+     * Response constructor.
+     * @param String $content content of response
+     * @param int $httpCodeResponse http code return
+     * @param array $header header of response
+     */
+    public function __construct(String $content = "", int $httpCodeResponse= self::HTTP_CODE_SUCCESS, array $header = array()) {
+        $this->_content = $content;
+        $this->_http_response_code = $httpCodeResponse;
+        $this->_header = $header;
     }
 
     /**
@@ -37,9 +62,9 @@ class Response {
      * @return string
      */
     public function __toString(): String {
-       $content = "";
-       if(!is_null($this->_content)) $content .= $this->content();
-       return $content;
+        http_response_code($this->_http_response_code);
+        foreach ($this->_header as $type => $value) header("$type:$value");
+        return $this->_content;
     }
 
 }
