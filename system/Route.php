@@ -228,11 +228,10 @@ class Route {
                 if(!is_null($this->auth_redirect) && !empty($this->auth_redirect)) {
                     $newRoute = Router::getInstance()->find($this->auth_redirect);
                     if(is_null($newRoute->parameters)) {
-                        header('Location: ' . $newRoute->url);
-                        exit;
+                        return new Response("", Response::HTTP_CODE_T_REDIRECTION, ['Location' => $newRoute->url]);
                     }
                 }
-                return new Response();
+                return new Response("", Response::HTTP_CODE_DENIED);
             }
         }
         $this->load();
