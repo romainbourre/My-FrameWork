@@ -18,7 +18,12 @@ class System {
     /**
      * App configuration file path
      */
-    public const APP_CONF_FILE = "config/application/conf.yml";
+    private const APP_CONF_FILE = "config/application/conf.yml";
+
+    /**
+     * Developers configuration file path
+     */
+    private const APP_DEV_FILE = "config/application/developers.yml";
 
     /**
      * Instance of system
@@ -27,22 +32,21 @@ class System {
     private static $_instance = null;
 
     /**
-     * Configuration of application
-     * @var null
+     * @var object configurations
      */
-    private $_application_conf = null;
+    private $_configurations;
 
     /**
      * Request
-     * @var null|Request
+     * @var Request
      */
-    private $_request = null;
+    private $_request;
 
     /**
      * Response
-     * @var null|Response
+     * @var Response
      */
-    private $_response = null;
+    private $_response;
 
 
     /**
@@ -58,11 +62,17 @@ class System {
         // Activate Autoloader
         require_once "AutoLoader.php";
         // Activate vendor autoloader
-        @require_once ROOT . 'vendor/autoload.php';
+        if(file_exists(ROOT . 'vendor/autoload.php')) @require_once ROOT . 'vendor/autoload.php';
         // Load tool
         require_once "tools.php";
 
-        $this->_application_conf = yaml_parse(file_get_contents(ROOT . self::APP_CONF_FILE));
+        $application_conf = yaml_parse(file_get_contents(ROOT . self::APP_CONF_FILE));
+        $developers_conf = array();
+        if(file_exists(ROOT . self::APP_DEV_FILE)) {
+            $temp = yaml_parse(file_get_contents(ROOT . self::APP_DEV_FILE));
+            if(isset($temp['developers_mode']) && $temp['developers_mode']) $developers_conf = $temp;
+        }
+        $this->_configurations = (object)array_merge($application_conf, $developers_conf);
 
         session_start();
 
@@ -75,27 +85,52 @@ class System {
 
         try {
 
-            $this->_request = new Request();
+            try {
 
-            $this->_response = Router::getInstance()->findResponseURL($this->_request);
-            echo $this->_response;
+                $this->_request = new Request();
 
-        }
-        catch(HttpNotFoundException $e) {
-            if(isset($this->_application_conf['development']['mode']) && $this->_application_conf['development']['mode']) echo (new ExceptionsWebPage())->indexAction($e);
+                $this->_response = Router::getInstance()->findResponseURL($this->_request);
+                echo $this->_response;
+
+            } catch (HttpNotFoundException $e) {
+                if (
+                    property_exists($this->_configurations, 'developers_mode')
+                    && $this->_configurations->developers_mode
+                ) {
+                    echo (new ExceptionsWebPage())->indexAction($e);
+                } elseif
+                (
+                    property_exists($this->_configurations, 'http_not_found')
+                    && !is_null($routeName = $this->_configurations->http_not_found['route'])
+                ) {
+                    echo Router::getInstance()->find($routeName)->action();
+                }
+                else {
+                    echo new Response("", Response::HTTP_CODE_NOT_FOUND);
+                }
+            }
+
         }
         catch (Exception $e) {
-            if(isset($this->_application_conf['development']['mode']) && $this->_application_conf['development']['mode']) echo (new ExceptionsWebPage())->indexAction($e);
+            if(
+                property_exists($this->_configurations, 'developers_mode')
+                && $this->_configurations->developers_mode
+            ) {
+                echo (new ExceptionsWebPage())->indexAction($e);
+            }
+            else {
+                echo new Response("", Response::HTTP_CODE_INTERNAL_SERVER_ERROR);
+            }
         }
 
     }
 
     /**
      * Get configuration of app
-     * @return array|null
+     * @return object|null
      */
-    public function getAppConf(): ?array {
-        return $this->_application_conf;
+    public function getAppConf(): object {
+        return $this->_configurations;
     }
 
     /**

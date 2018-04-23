@@ -11,11 +11,12 @@ namespace System\Http;
 class Response {
 
     public const HTTP_CODE_SUCCESS = 200;
-    public const HTTP_CODE_P_REDIRECTION = 301;
-    public const HTTP_CODE_T_REDIRECTION = 302;
-    public const HTTP_CODE_NOAUTH = 401;
+    public const HTTP_CODE_PERMANENT_REDIRECTION = 301;
+    public const HTTP_CODE_TEMPORARY_REDIRECTION = 302;
+    public const HTTP_CODE_NOT_AUTH = 401;
     public const HTTP_CODE_DENIED = 403;
-    public const HTTP_CODE_NOFOUND = 404;
+    public const HTTP_CODE_NOT_FOUND = 404;
+    public const HTTP_CODE_INTERNAL_SERVER_ERROR = 500;
 
     /**
      * Body content of response

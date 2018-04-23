@@ -220,7 +220,7 @@ class Route {
      * @throws ClassNotExtendsControllerException
      * @throws \Exception
      */
-    public function action(array $parameters): Response {
+    public function action(array $parameters = array()): Response {
         if(!is_null($this->auth_class) && !is_null($this->auth_method)) {
             $authClass = new $this->auth_class();
             $returnAuthValue = call_user_func(array($authClass, $this->auth_method));
@@ -228,7 +228,7 @@ class Route {
                 if(!is_null($this->auth_redirect) && !empty($this->auth_redirect)) {
                     $newRoute = Router::getInstance()->find($this->auth_redirect);
                     if(is_null($newRoute->parameters)) {
-                        return new Response("", Response::HTTP_CODE_T_REDIRECTION, ['Location' => $newRoute->url]);
+                        return new Response("", Response::HTTP_CODE_TEMPORARY_REDIRECTION, ['Location' => $newRoute->url]);
                     }
                 }
                 return new Response("", Response::HTTP_CODE_DENIED);

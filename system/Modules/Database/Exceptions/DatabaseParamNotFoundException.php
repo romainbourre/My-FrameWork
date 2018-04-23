@@ -13,10 +13,9 @@ class DatabaseParamNotFoundException extends \Exception {
     /**
      * DatabaseParamNotFoundException constructor.
      * @param string $parameter
-     * @param string $confFile
      */
-    public function __construct(string $parameter, string $confFile) {
-        parent::__construct("Parameter '$parameter' not found in configuration file '$confFile'");
+    public function __construct(string $parameter) {
+        parent::__construct("Parameter '$parameter' not found in application configurations files");
     }
 
 }
