@@ -10,7 +10,12 @@ namespace System\Exceptions;
  */
 class IncorrectParameterRouteException extends \Exception {
 
-    public function __construct(String $url, String $param) {
+    /**
+     * IncorrectParameterRouteException constructor.
+     * @param string $url
+     * @param string $param
+     */
+    public function __construct(string $url, string $param) {
         parent::__construct("Parameter '$param' is incorrect in url '$url'. See 'routing.yml'.");
     }
 

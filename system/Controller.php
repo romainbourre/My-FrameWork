@@ -34,11 +34,11 @@ class Controller implements WebPage {
 
     /**
      * Recover view content
-     * @param $view String
+     * @param string $view
      * @param array|null $variables
      * @return String content of view
      */
-    protected function render(String $view, array $variables = null): String {
+    protected function render(string $view, array $variables = null): String {
 
         ob_start();
 

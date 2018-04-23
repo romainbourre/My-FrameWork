@@ -2,8 +2,6 @@
 
 namespace System\Exceptions;
 
-use Throwable;
-
 /**
  * Class UndefinedRouteMethodException
  * Raise when a method in table routing doesn't found
@@ -12,7 +10,12 @@ use Throwable;
  */
 class UndefinedRouteMethodException extends \Exception {
 
-    public function __construct(String $routeName, String $methodName) {
+    /**
+     * UndefinedRouteMethodException constructor.
+     * @param string $routeName
+     * @param string $methodName
+     */
+    public function __construct(string $routeName, string $methodName) {
         parent::__construct("Undefined method '$methodName' in route '$routeName'", '002');
     }
 

@@ -10,7 +10,11 @@ namespace System\Exceptions;
  */
 class RouteNotFoundException extends \Exception {
 
-    public function __construct(String $nameRoute) {
+    /**
+     * RouteNotFoundException constructor.
+     * @param String $nameRoute
+     */
+    public function __construct(string $nameRoute) {
         parent::__construct("Route '$nameRoute' not found", 5565);
     }
 

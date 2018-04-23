@@ -10,7 +10,7 @@ namespace System\Exceptions;
  */
 class HttpNotFoundException extends \Exception {
 
-    public function __construct(String $url) {
+    public function __construct(string $url) {
         parent::__construct("Page not found in url '$url'", 5565);
     }
 
