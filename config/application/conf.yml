@@ -1,8 +1,9 @@
-development:
-    mode: on
 database:
     type: 'mysql'
-    dbname: 'IUTPROJECT'
+    dbname: 'AARTUP'
     host: 'localhost'
     user: 'root'
     password: ''
+
+http_not_found:
+    route:
