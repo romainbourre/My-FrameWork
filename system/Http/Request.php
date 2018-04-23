@@ -43,10 +43,10 @@ class Request {
 
     /**
      * Get secure $_POST or $_GET variable
-     * @param String $variable name of variable
+     * @param string $variable name of variable
      * @return null|String content
      */
-    public function get(String $variable): ?String {
+    public function get(string $variable): ?string {
         if(isset($_SESSION['POST'][$variable])) return htmlspecialchars($_SESSION['POST'][$variable]);
         else if(isset($_SESSION['GET'][$variable])) return htmlspecialchars($_SESSION['GET'][$variable]);
         return null;

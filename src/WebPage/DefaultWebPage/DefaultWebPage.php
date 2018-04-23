@@ -3,7 +3,6 @@
 namespace WebPage\DefaultWebPage;
 
 use System\Controller;
-use System\Http\Request;
 use System\Http\Response;
 
 /**
@@ -14,7 +13,7 @@ use System\Http\Response;
  */
 class DefaultWebPage extends Controller {
 
-    public function indexAction(Request $request) {
+    public function indexAction() {
 
         return new Response($this->render('DefaultView'));
 
