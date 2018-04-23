@@ -10,7 +10,7 @@ namespace System\Exceptions;
  */
 class IncorrectFormatConfigurationFileException extends \Exception {
 
-    public function __construct(String $file) {
+    public function __construct(string $file) {
         parent::__construct("Incorrect format of configuration file '$file'");
     }
 

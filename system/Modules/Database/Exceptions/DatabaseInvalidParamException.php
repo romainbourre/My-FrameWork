@@ -10,7 +10,12 @@ namespace System\Modules\Database\Exceptions;
  */
 class DatabaseInvalidParamException extends \Exception {
 
-    public function __construct(string $param, String $confFile) {
+    /**
+     * DatabaseInvalidParamException constructor.
+     * @param string $param
+     * @param string $confFile
+     */
+    public function __construct(string $param, string $confFile) {
         parent::__construct("Invalid parameter '$param' in application configuration file '$confFile'");
     }
 

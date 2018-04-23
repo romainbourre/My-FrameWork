@@ -10,7 +10,12 @@ namespace System\Exceptions;
  */
 class ClassNotExtendsControllerException extends \Exception {
 
-    public function __construct(String $class, String $route) {
+    /**
+     * ClassNotExtendsControllerException constructor.
+     * @param string $class
+     * @param String $route
+     */
+    public function __construct(string $class, String $route) {
         parent::__construct("The class '$class' of route '$route' not extend System\\Controller");
     }
 

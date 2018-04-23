@@ -79,7 +79,7 @@ class Router {
      * @throws RouteNotFoundException
      * @throws \Exception
      */
-    public function find(String $nameRoute): Route {
+    public function find(string $nameRoute): Route {
         if(!is_null($this->routing)) {
             if(isset($this->routing[$nameRoute])) return new Route($nameRoute, $this->routing[$nameRoute]);
         }

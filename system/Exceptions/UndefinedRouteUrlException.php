@@ -10,6 +10,10 @@ namespace System\Exceptions;
  */
 class UndefinedRouteUrlException extends \Exception {
 
+    /**
+     * UndefinedRouteUrlException constructor.
+     * @param string $routeName
+     */
     public function __construct(string $routeName) {
         parent::__construct("Url not found in route '$routeName'");
     }

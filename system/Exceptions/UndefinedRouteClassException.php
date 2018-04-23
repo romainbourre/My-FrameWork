@@ -10,7 +10,11 @@ namespace System\Exceptions;
  */
 class UndefinedRouteClassException extends \Exception {
 
-    public function __construct(String $routeName) {
+    /**
+     * UndefinedRouteClassException constructor.
+     * @param string $routeName
+     */
+    public function __construct(string $routeName) {
         parent::__construct("Class undefined in routing of route '$routeName'", '001');
     }
 

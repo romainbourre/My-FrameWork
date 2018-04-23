@@ -20,18 +20,18 @@ class AutoLoader {
 
     /**
      * System class autoloader
-     * @param String $className
+     * @param string $className
      */
-    private static function systemAutoloader(String $className): void {
+    private static function systemAutoloader(string $className): void {
         $className = str_replace("\\", "/", $className);
         @include (ROOT . "$className.php");
     }
 
     /**
      * Source class autoloader
-     * @param String $className
+     * @param string $className
      */
-    private static function sourceAutoloader(String $className): void {
+    private static function sourceAutoloader(string $className): void {
         $className = str_replace("\\", "/", $className);
         @include (ROOT . "src/$className.php");
     }

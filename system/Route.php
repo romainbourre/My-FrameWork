@@ -78,14 +78,14 @@ class Route {
 
     /**
      * Route constructor.
-     * @param String $name
+     * @param string $name
      * @param array $data
      * @throws UndefinedRouteClassException
      * @throws UndefinedRouteMethodException
      * @throws UndefinedRouteUrlException
      * @throws \Exception
      */
-    public function __construct(String $name, array $data) {
+    public function __construct(string $name, array $data) {
         $this->name = $name;
         if(isset($data['url'])) $this->url = $data['url']; else throw new UndefinedRouteUrlException($name);
         if(isset($data['class'])) $action = $data['class']; else throw new UndefinedRouteClassException($name);
