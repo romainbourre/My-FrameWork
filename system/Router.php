@@ -58,13 +58,22 @@ class Router {
      */
     public function findResponseURL(Request $request): Response {
         if(!is_null($this->routing)) {
+            $bestRoute = null;
+            $tempException = null;
             foreach ($this->routing as $name => $data) {
                 if(!is_array($data)) throw new IncorrectFormatConfigurationFileException(self::ROUTING_CONF);
-                $route = new Route($name, $data);
-                if(!is_null($params = $route->checkURL($request->getUrl()))) {
-                    return $route->action(array_merge(array($request), array_values($params)));
+                try {
+                    $route = new Route($name, $data);
+                    if (!is_null($params = $route->checkURL($request->getUrl()))) {
+                        $bestRoute = $route->action(array_merge(array($request), array_values($params)));
+                        $tempException = null;
+                    }
+                }
+                catch (\Exception $e) {
+                    $tempException = $e;
                 }
             }
+            if(!is_null($bestRoute) && is_null($tempException)) return $bestRoute; else if (!is_null($tempException)) throw $tempException;
         }
         throw new HttpNotFoundException($request->getUrl());
     }
