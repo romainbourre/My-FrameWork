@@ -29,13 +29,13 @@ class Database extends \PDO {
     public static function getDB(): Database {
         if(is_null(self::$_instance)) {
             $conf = System::get()->getAppConf();
-            if(isset($conf['database']['type'])) $type = $conf['database']['type']; else throw new DatabaseParamNotFoundException("type", System::APP_CONF_FILE);
-            if(isset($conf['database']['host'])) $host = $conf['database']['host']; else throw new DatabaseParamNotFoundException("host", System::APP_CONF_FILE);
-            if(isset($conf['database']['dbname'])) $dbname = $conf['database']['dbname']; else throw new DatabaseParamNotFoundException("dbname", System::APP_CONF_FILE);
-            if(isset($conf['database']['user'])) $user = $conf['database']['user']; else throw new DatabaseParamNotFoundException("user", System::APP_CONF_FILE);
-            if(isset($conf['database']['password'])) $pwd = $conf['database']['password']; else throw new DatabaseParamNotFoundException("password", System::APP_CONF_FILE);
-            if(isset($conf['database']['options'])) {
-                if(is_array($conf['database']['options'])) $options = $conf['database']['options']; else throw new DatabaseInvalidParamException("options", System::APP_CONF_FILE);
+            if(property_exists($conf, 'database') && isset($conf->database['type'])) $type = $conf->database['type']; else throw new DatabaseParamNotFoundException("type");
+            if(property_exists($conf, 'database') && isset($conf->database['host'])) $host = $conf->database['host']; else throw new DatabaseParamNotFoundException("host");
+            if(property_exists($conf, 'database') && isset($conf->database['dbname'])) $dbname = $conf->database['dbname']; else throw new DatabaseParamNotFoundException("dbname");
+            if(property_exists($conf, 'database') && isset($conf->database['user'])) $user = $conf->database['user']; else throw new DatabaseParamNotFoundException("user");
+            if(property_exists($conf, 'database') && isset($conf->database['password'])) $pwd = $conf->database['password']; else throw new DatabaseParamNotFoundException("password");
+            if(property_exists($conf, 'database') && isset($conf->database['options'])){
+                if(is_array($conf->database['options'])) $options = $conf->database['options']; else throw new DatabaseInvalidParamException("options");
             } else $options = null;
             self::$_instance = new self("$type:dbname=$dbname;host=$host", $user, $pwd, $options);
         }
