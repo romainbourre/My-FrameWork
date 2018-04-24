@@ -2,3 +2,13 @@
 default:
     url: /
     class: WebPage\DefaultWebPage\DefaultWebPage::indexAction
+
+route1:
+    url: /profile/{id}
+    class: WebPage\DefaultWebPage\DefaultWebPage::indexAction
+    params:
+        id: '[0-9]'
+
+route2:
+    url: /profile/posts
+    class: WebPage\DefaultWebPage\DefaultWebPage::indexAction
