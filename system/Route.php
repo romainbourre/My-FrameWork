@@ -32,14 +32,19 @@ class Route {
     private $url = null;
 
     /**
+     * @var null|string http method of route
+     */
+    private $method = null;
+
+    /**
      * @var null class of route
      */
     private $class = null;
 
     /**
-     * @var null $method of class
+     * @var null $action of class
      */
-    private $method = null;
+    private $action = null;
 
     /**
      * @var mixed|null regex of parameters
@@ -91,7 +96,7 @@ class Route {
         if(isset($data['class'])) $action = $data['class']; else throw new UndefinedRouteClassException($name);
         $action = explode("::", $action);
         if(isset($action[0]) && class_exists($action[0])) $this->class = $action[0]; else throw new UndefinedRouteClassException($name);
-        if(isset($action[1]) && method_exists($this->class, $action[1])) $this->method = $action[1]; else throw new UndefinedRouteMethodException($name, $action[1]);
+        if(isset($action[1]) && method_exists($this->class, $action[1])) $this->action = $action[1]; else throw new UndefinedRouteMethodException($name, $action[1]);
         if(isset($data['params'])) $this->regex = $data['params'];
         $this->findParameters();
         if(isset($data['auth'])) {
@@ -106,6 +111,9 @@ class Route {
                     if (isset($data['auth']['redirect'])) $this->auth_redirect = $data['auth']['redirect'];
                 }else throw new UndefinedRouteMethodException($name, $arrayClass[1]);
             } else throw new UndefinedRouteClassException($name);
+        }
+        if(isset($data['method'])) {
+            $this->method = $data['method'];
         }
     }
 
@@ -150,7 +158,7 @@ class Route {
      * @throws TooManyParametersException
      * @throws IncorrectParameterRouteException
      */
-    public function getUrl(...$params): String {
+    public function getUrl(...$params): string {
         if(sizeof($params) === 1 && is_array($params[0])) $params = $params[0];
         if(($need = sizeof($this->parameters)) < ($given = sizeof($params))) throw  new TooManyParametersException($this->name, $need, $given);
         if(($need = sizeof($this->parameters)) > ($given = sizeof($params))) throw  new TooFewParametersException($this->name, $need, $given);
@@ -166,6 +174,14 @@ class Route {
             $url = preg_replace("/$parameter/", $params[$i], $url);
         }
         return $url;
+    }
+
+    /**
+     * Get http method request to a route
+     * @return null|string
+     */
+    public function getHttpMethod(): ?string {
+        return $this->method;
     }
 
     /**
@@ -235,7 +251,7 @@ class Route {
             }
         }
         $this->load();
-        return call_user_func_array(array($this->webpage, $this->method), $parameters);
+        return call_user_func_array(array($this->webpage, $this->action), $parameters);
     }
 
 }

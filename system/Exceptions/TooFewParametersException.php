@@ -10,7 +10,7 @@ namespace System\Exceptions;
  */
 class TooFewParametersException extends \Exception {
 
-    public function __construct(String $routeName, int $need, int $given) {
+    public function __construct(string $routeName, int $need, int $given) {
         parent::__construct("Too few parameters given to route '$routeName', need $need but $given given");
     }
 

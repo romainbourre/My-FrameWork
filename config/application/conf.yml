@@ -4,6 +4,3 @@ database:
     host: 'localhost'
     user: 'root'
     password: ''
-
-http_not_found:
-    route:

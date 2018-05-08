@@ -2,6 +2,7 @@
 default:
     url: /
     class: WebPage\DefaultWebPage\DefaultWebPage::indexAction
+    method: POST
 
 route1:
     url: /profile/{id}

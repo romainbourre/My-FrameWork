@@ -2,6 +2,7 @@
 
 namespace System;
 
+use System\Exceptions\IncorrectRequestMethodException;
 use System\FrameworkWebPage\ExceptionsWebPage\ExceptionsWebPage;
 use System\Http\Request;
 use System\Http\Response;
@@ -84,43 +85,23 @@ class System {
     public function start(): void {
 
         try {
-
+            $this->_request = new Request();
+            $this->_response = Router::getInstance()->findResponseURL($this->_request);
+            echo $this->_response;
+        }
+        catch(HttpNotFoundException $e) {
             try {
-
-                $this->_request = new Request();
-
-                $this->_response = Router::getInstance()->findResponseURL($this->_request);
-                echo $this->_response;
-
-            } catch (HttpNotFoundException $e) {
-                if (
-                    property_exists($this->_configurations, 'developers_mode')
-                    && $this->_configurations->developers_mode
-                ) {
-                    echo (new ExceptionsWebPage())->indexAction($e);
-                } elseif
-                (
-                    property_exists($this->_configurations, 'http_not_found')
-                    && !is_null($routeName = $this->_configurations->http_not_found['route'])
-                ) {
-                    echo Router::getInstance()->find($routeName)->action();
-                }
-                else {
-                    echo new Response("", Response::HTTP_CODE_NOT_FOUND);
-                }
+                echo Router::getInstance()->find("httpNotFound")->action();
             }
-
+            catch(Exception $e) {
+                echo $this->runException($e, new Response("", Response::HTTP_CODE_NOT_FOUND));
+            }
+        }
+        catch (IncorrectRequestMethodException $e) {
+            echo $this->runException($e, new Response("", Response::HTTP_CODE_DENIED));
         }
         catch (Exception $e) {
-            if(
-                property_exists($this->_configurations, 'developers_mode')
-                && $this->_configurations->developers_mode
-            ) {
-                echo (new ExceptionsWebPage())->indexAction($e);
-            }
-            else {
-                echo new Response("", Response::HTTP_CODE_INTERNAL_SERVER_ERROR);
-            }
+            echo $this->runException($e, new Response("", Response::HTTP_CODE_INTERNAL_SERVER_ERROR));
         }
         finally {
             $this->onEnd();
@@ -150,6 +131,18 @@ class System {
     public static function get(): System {
         if(is_null(self::$_instance)) self::$_instance = new self();
         return self::$_instance;
+    }
+
+    /**
+     * Return exception web page if developers mode activate,
+     * response given else
+     * @param Exception $e exception
+     * @param Response $r response else
+     * @return Response response
+     */
+    private function runException(Exception $e, Response $r): Response {
+        if(property_exists($this->_configurations, 'developers_mode') && $this->_configurations->developers_mode ) return (new ExceptionsWebPage())->indexAction($e);
+        return $r;
     }
 
 }
