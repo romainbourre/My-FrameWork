@@ -16,6 +16,8 @@ class DefaultWebPage extends Controller {
 
     public function indexAction(Request $request) {
 
+        var_dump($request->get("file", true));
+
         return new Response($this->render('DefaultView'));
 
     }

@@ -3,12 +3,11 @@
 namespace System;
 
 use System\Exceptions\IncorrectFormatConfigurationFileException;
+use System\Exceptions\IncorrectRequestMethodException;
 use System\Exceptions\RouteNotFoundException;
 use System\Http\Request;
 use System\Http\Response;
-use System\Exceptions\ClassNotExtendsControllerException;
 use System\Exceptions\HttpNotFoundException;
-use System\Exceptions\IncorrectParameterRouteException;
 use System\Exceptions\UndefinedRouteClassException;
 use System\Exceptions\UndefinedRouteMethodException;
 
@@ -35,39 +34,40 @@ class Router {
      * Routing yaml content
      * @var array|null
      */
-    private $routing = null;
+    private $_conf_routing = null;
 
     /**
      * Router constructor.
      */
     private function __construct() {
-        $this->routing = yaml_parse(file_get_contents(ROOT . self::ROUTING_CONF));
+        $this->_conf_routing = yaml_parse(file_get_contents(ROOT . self::ROUTING_CONF));
     }
 
     /**
      * Found web page to url
      * @param Request $request web request
      * @return Response
-     * @throws Exceptions\UndefinedRouteUrlException
      * @throws HttpNotFoundException
-     * @throws UndefinedRouteClassException
-     * @throws UndefinedRouteMethodException
-     * @throws IncorrectParameterRouteException
-     * @throws ClassNotExtendsControllerException
+     * @throws IncorrectFormatConfigurationFileException
+     * @throws IncorrectRequestMethodException
      * @throws \Exception
      */
     public function findResponseURL(Request $request): Response {
-        if(!is_null($this->routing)) {
+        if(!is_null($this->_conf_routing)) {
             $bestRoute = null;
             $tempException = null;
-            foreach ($this->routing as $name => $data) {
+            foreach ($this->_conf_routing as $name => $data) {
                 if(!is_array($data)) throw new IncorrectFormatConfigurationFileException(self::ROUTING_CONF);
                 try {
                     $route = new Route($name, $data);
                     if (!is_null($params = $route->checkURL($request->getUri()))) {
+                        if(!is_null($expectMethod = $route->getHttpMethod()) && $expectMethod != ($findMethod = $request->getMethod())) throw new IncorrectRequestMethodException($findMethod, $expectMethod);
                         $bestRoute = $route->action(array_merge(array($request), array_values($params)));
                         $tempException = null;
                     }
+                }
+                catch (IncorrectRequestMethodException $e) {
+                    throw $e;
                 }
                 catch (\Exception $e) {
                     $tempException = $e;
@@ -89,8 +89,8 @@ class Router {
      * @throws \Exception
      */
     public function find(string $nameRoute): Route {
-        if(!is_null($this->routing)) {
-            if(isset($this->routing[$nameRoute])) return new Route($nameRoute, $this->routing[$nameRoute]);
+        if(!is_null($this->_conf_routing)) {
+            if(isset($this->_conf_routing[$nameRoute])) return new Route($nameRoute, $this->_conf_routing[$nameRoute]);
         }
         throw new RouteNotFoundException($nameRoute);
     }
