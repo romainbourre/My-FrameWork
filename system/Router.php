@@ -64,7 +64,7 @@ class Router {
                 if(!is_array($data)) throw new IncorrectFormatConfigurationFileException(self::ROUTING_CONF);
                 try {
                     $route = new Route($name, $data);
-                    if (!is_null($params = $route->checkURL($request->getUrl()))) {
+                    if (!is_null($params = $route->checkURL($request->getUri()))) {
                         $bestRoute = $route->action(array_merge(array($request), array_values($params)));
                         $tempException = null;
                     }
@@ -75,7 +75,7 @@ class Router {
             }
             if(!is_null($bestRoute) && is_null($tempException)) return $bestRoute; else if (!is_null($tempException)) throw $tempException;
         }
-        throw new HttpNotFoundException($request->getUrl());
+        throw new HttpNotFoundException($request->getUri());
     }
 
     /**
