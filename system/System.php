@@ -122,7 +122,17 @@ class System {
                 echo new Response("", Response::HTTP_CODE_INTERNAL_SERVER_ERROR);
             }
         }
+        finally {
+            $this->onEnd();
+        }
 
+    }
+
+    /**
+     * Script of request end
+     */
+    public function onEnd(): void {
+        $this->_request->purge();
     }
 
     /**
