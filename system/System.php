@@ -2,7 +2,6 @@
 
 namespace System;
 
-use System\Exceptions\IncorrectRequestMethodException;
 use System\FrameworkWebPage\ExceptionsWebPage\ExceptionsWebPage;
 use System\Http\Request;
 use System\Http\Response;
@@ -22,6 +21,11 @@ class System {
     private const APP_CONF_FILE = "config/application/conf.yml";
 
     /**
+     * App variables file path
+     */
+    private const APP_VAR_FILE = "config/application/variables.yml";
+
+    /**
      * Developers configuration file path
      */
     private const APP_DEV_FILE = "config/application/developers.yml";
@@ -38,16 +42,20 @@ class System {
     private $_configurations;
 
     /**
+     * @var array variables
+     */
+    private $_variables = array();
+
+    /**
      * Request
      * @var Request
      */
     private $_request;
 
     /**
-     * Response
-     * @var Response
+     * @var Route
      */
-    private $_response;
+    private $_route;
 
 
     /**
@@ -75,6 +83,10 @@ class System {
         }
         $this->_configurations = (object)array_merge($application_conf, $developers_conf);
 
+        if(file_exists(ROOT . self::APP_VAR_FILE)) {
+            $this->_variables = yaml_parse(file_get_contents(ROOT . self::APP_VAR_FILE));
+        }
+
         session_start();
 
     }
@@ -83,22 +95,18 @@ class System {
      * Start Framework
      */
     public function start(): void {
-
         try {
             $this->_request = new Request();
-            $this->_response = Router::getInstance()->findResponseURL($this->_request);
-            echo $this->_response;
+            $this->_route = Router::getInstance()->findRouteByRequest($this->_request);
+            $this->_route->exec();
         }
         catch(HttpNotFoundException $e) {
             try {
-                echo Router::getInstance()->find("httpNotFound")->action();
+                Router::getInstance()->find("httpNotFound")->exec();
             }
             catch(Exception $e) {
                 echo $this->runException($e, new Response("", Response::HTTP_CODE_NOT_FOUND));
             }
-        }
-        catch (IncorrectRequestMethodException $e) {
-            echo $this->runException($e, new Response("", Response::HTTP_CODE_DENIED));
         }
         catch (Exception $e) {
             echo $this->runException($e, new Response("", Response::HTTP_CODE_INTERNAL_SERVER_ERROR));
@@ -106,14 +114,13 @@ class System {
         finally {
             $this->onEnd();
         }
-
     }
 
     /**
      * Script of request end
      */
     public function onEnd(): void {
-        $this->_request->purge();
+        if(!is_null($this->_request)) $this->_request->purge();
     }
 
     /**
@@ -122,6 +129,22 @@ class System {
      */
     public function getAppConf(): object {
         return $this->_configurations;
+    }
+
+    /**
+     * Get variables of application
+     * @return array
+     */
+    public function getVars(): array {
+        return $this->_variables;
+    }
+
+    /**
+     * Get current request
+     * @return Request
+     */
+    public function getRequest(): Request {
+        return $this->_request;
     }
 
     /**

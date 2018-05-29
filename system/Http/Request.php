@@ -11,9 +11,19 @@ namespace System\Http;
 class Request {
 
     /**
+     * Define session name to variables
+     */
+    private const SESSION_VAR = 'VARS';
+
+    /**
      * @var string Url request
      */
     private $uri;
+
+    /**
+     * @var string md5 converted uri
+     */
+    private $encrypt_uri;
 
     /**
      * @var array header of request
@@ -31,20 +41,21 @@ class Request {
     public function __construct() {
         if(!($endPos = strrpos($_SERVER['REQUEST_URI'], "?"))) $endPos = strlen($_SERVER['REQUEST_URI']);
         $this->uri = substr($_SERVER['REQUEST_URI'], 0, $endPos);
+        $this->encrypt_uri = $this->uri;
         $this->headers = apache_request_headers();
         $this->method = $_SERVER['REQUEST_METHOD'];
-        if(!isset($_SESSION[md5($this->uri)])) {
-            $_SESSION[md5($this->uri)] = array();
-            $_SESSION[md5($this->uri)]['FILES'] = array();
+        if(!isset($_SESSION[self::SESSION_VAR][$this->encrypt_uri])) {
+            $_SESSION[self::SESSION_VAR][$this->encrypt_uri] = array();
+            $_SESSION[self::SESSION_VAR][$this->encrypt_uri]['FILES'] = array();
         }
         $redirect = false;
         if(isset($_POST) && !empty($_POST)) {
-            $_SESSION[md5($this->uri)] = array_merge($_SESSION[md5($this->uri)], $_POST);
+            $_SESSION[self::SESSION_VAR][$this->encrypt_uri] = array_merge($_SESSION[self::SESSION_VAR][$this->encrypt_uri], $_POST);
             unset($_POST);
             $redirect = true;
         }
         if(isset($_GET) && !empty($_GET)) {
-            $_SESSION[md5($this->uri)] = array_merge($_SESSION[md5($this->uri)], $_GET);
+            $_SESSION[self::SESSION_VAR][$this->encrypt_uri] = array_merge($_SESSION[self::SESSION_VAR][$this->encrypt_uri], $_GET);
             unset($_GET);
             $redirect = true;
         }
@@ -53,26 +64,25 @@ class Request {
                 $path = substr($f['tmp_name'], 0, strrpos($f['tmp_name'], "/", 0));
                 if(move_uploaded_file($f['tmp_name'], $dest = "$path/file_" . md5($this->uri . time()))) $_FILES[$k]['tmp_name'] = $dest;
             }
-            $_SESSION[md5($this->uri)]['FILES'] = array_merge($_SESSION[md5($this->uri)]['FILES'], $_FILES);
+            $_SESSION[self::SESSION_VAR][$this->encrypt_uri]['FILES'] = array_merge($_SESSION[self::SESSION_VAR][$this->encrypt_uri]['FILES'], $_FILES);
             unset($_FILES);
             $redirect = true;
         }
         if($redirect) {
-            header("Location: $this->uri");
-            exit;
+            echo new Response("", Response::HTTP_CODE_PERMANENT_REDIRECTION);
         }
     }
 
     /**
      * Get POST, GET and FILES variable
-     * @param string $variable name of variable
+     * @param string $var name of variable
      * @param bool $secure security of return content
      * @return null|String|array content
      */
-    public function get(string $variable, bool $secure = true) {
+    public function get(string $var, bool $secure = true) {
         $content = null;
-        if(isset($_SESSION[md5($this->uri)][$variable])) $content = $_SESSION[md5($this->uri)][$variable];
-        if(isset($_SESSION[md5($this->uri)]['FILES'][$variable])) $content = $_SESSION[md5($this->uri)]['FILES'][$variable];
+        if(isset($_SESSION[self::SESSION_VAR][$this->encrypt_uri][$var])) $content = $_SESSION[self::SESSION_VAR][$this->encrypt_uri][$var];
+        if(isset($_SESSION[self::SESSION_VAR][$this->encrypt_uri]['FILES'][$var])) $content = $_SESSION[self::SESSION_VAR][$this->encrypt_uri]['FILES'][$var];
         if(!$secure || is_null($content) || is_array($content)) return $content ; return htmlspecialchars($content);
     }
 
@@ -84,22 +94,33 @@ class Request {
      */
     public function get_and_del(string $variable, bool $secure = true) {
         if(!is_null($content = $this->get($variable, $secure))) {
-            unset($_SESSION[md5($this->uri)][$variable]);
-            unset($_SESSION[md5($this->uri)]['FILES'][$variable]);
+            unset($_SESSION[self::SESSION_VAR][$this->encrypt_uri][$variable]);
+            unset($_SESSION[self::SESSION_VAR][$this->encrypt_uri]['FILES'][$variable]);
         }
         return $content;
+    }
+
+    /**
+     * Reset POST, GET and FILES variables
+     */
+    public function resetVar(): void {
+        $_SESSION[self::SESSION_VAR][$this->encrypt_uri] = array();
+        $_SESSION[self::SESSION_VAR][$this->encrypt_uri]['FILES'] = array();
     }
 
     /**
      * Unset GET, POST and FILES variable
      */
     public function purge(): void {
-        foreach ($_SESSION[md5($this->uri)]['FILES'] as $f) {
-            unlink($f['tmp_name']);
+        foreach ($_SESSION[self::SESSION_VAR] as $uri => $data) {
+            if(isset($_SESSION[self::SESSION_VAR][$uri]['FILES'])) {
+                foreach ($_SESSION[self::SESSION_VAR][$uri]['FILES'] as $f) {
+                    unlink($f['tmp_name']);
+                }
+                unset($_SESSION[self::SESSION_VAR][$uri]['FILES']);
+            }
+            if (empty($_SESSION[self::SESSION_VAR][$uri])) unset($_SESSION[self::SESSION_VAR][$uri]);
         }
-        unset($_SESSION[md5($this->uri)]);
-        $_SESSION[md5($this->uri)] = array();
-        $_SESSION[md5($this->uri)]['FILES'] = array();
     }
 
     /**
@@ -121,6 +142,20 @@ class Request {
      */
     public function getMethod(): string {
         return $this->method;
+    }
+
+    /**
+     * Get POST, GET and FILES variable in all request
+     * @param string $var name of variable
+     * @param bool $secure security of return content
+     * @return null|String|array content
+     */
+    public static function getOnAll(string $var, bool $secure = true) {
+        $content = null;
+        foreach ($_SESSION[self::SESSION_VAR] as $url => $variables) {
+            if(key_exists($var, $variables) && is_null($content)) $content = $variables[$var];
+        }
+        if(!$secure || is_null($content) || is_array($content)) return $content ; return htmlspecialchars($content);
     }
 
 }
