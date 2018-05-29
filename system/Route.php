@@ -2,16 +2,18 @@
 
 namespace System;
 
+use System\Exceptions\IncorrectAuthenticationException;
 use System\Exceptions\ClassNotExtendsControllerException;
 use System\Exceptions\IncorrectFormatConfigurationFileException;
 use System\Exceptions\IncorrectParameterRouteException;
+use System\Exceptions\IncorrectRequestMethodException;
 use System\Exceptions\TooFewParametersException;
 use System\Exceptions\TooManyParametersException;
 use System\Exceptions\UndefinedRouteClassException;
-use System\Exceptions\UndefinedRouteMethodException;
+use System\Exceptions\UndefinedRouteFuncException;
 use System\Exceptions\UndefinedRouteUrlException;
+use System\Http\Request;
 use System\Http\Response;
-use System\Interfaces\WebPage;
 
 /**
  * Class Route
@@ -42,9 +44,9 @@ class Route {
     private $class = null;
 
     /**
-     * @var null $action of class
+     * @var null $func of class
      */
-    private $action = null;
+    private $func = null;
 
     /**
      * @var mixed|null regex of parameters
@@ -52,19 +54,19 @@ class Route {
     private $regex = null;
 
     /**
-     * @var null parameters of url
+     * @var array parameters of url
      */
     private $parameters = null;
 
     /**
-     * @var null|String Class asked to authentication of routing
+     * @var String Class asked to authentication of routing
      */
-    private $auth_class = null;
+    private $auth_class;
 
     /**
-     * @var null|String Method asked to authentication of routing
+     * @var String Method asked to authentication of routing
      */
-    private $auth_method = null;
+    private $auth_func;
 
     /**
      * @var mixed|null Expected value to authentication
@@ -77,28 +79,42 @@ class Route {
     private $auth_redirect = null;
 
     /**
-     * @var null Web page of route
+     * @var Request|null loaded request
      */
-    private $webpage = null;
+    private $associated_request = null;
+
+    /**
+     * @var null|array loader parameters
+     */
+    private $associated_parameters = null;
 
     /**
      * Route constructor.
      * @param string $name
      * @param array $data
      * @throws UndefinedRouteClassException
-     * @throws UndefinedRouteMethodException
+     * @throws UndefinedRouteFuncException
      * @throws UndefinedRouteUrlException
      * @throws \Exception
      */
     public function __construct(string $name, array $data) {
+        // NAM OF ROUTE
         $this->name = $name;
+        // URL OF ROUTE
         if(isset($data['url'])) $this->url = $data['url']; else throw new UndefinedRouteUrlException($name);
+        // CHECK VALIDITY OF ROUTE CLASS AND ROUTE FUNCTION
         if(isset($data['class'])) $action = $data['class']; else throw new UndefinedRouteClassException($name);
         $action = explode("::", $action);
-        if(isset($action[0]) && class_exists($action[0])) $this->class = $action[0]; else throw new UndefinedRouteClassException($name);
-        if(isset($action[1]) && method_exists($this->class, $action[1])) $this->action = $action[1]; else throw new UndefinedRouteMethodException($name, $action[1]);
+        if(isset($action[0]) && class_exists($action[0])) {
+            if(is_subclass_of($action[0], 'System\Controller')) {
+                $this->class = $action[0];
+            } else throw new ClassNotExtendsControllerException(get_class($action[0]), $this->url);
+        } else throw new UndefinedRouteClassException($name);
+        if(isset($action[1]) && method_exists($this->class, $action[1])) $this->func = $action[1]; else throw new UndefinedRouteFuncException($name, $action[1]);
+        // GET PARAMETERS OF ROUTE
         if(isset($data['params'])) $this->regex = $data['params'];
         $this->findParameters();
+        // CHECK AUTHENTICATION CONFIGURATION
         if(isset($data['auth'])) {
             if(!is_array($data['auth']) || !isset($data['auth']['class']) || empty($data['auth']['class'])) throw new IncorrectFormatConfigurationFileException(Router::ROUTING_CONF);
             $arrayClass = explode('::', $data['auth']['class']);
@@ -106,12 +122,13 @@ class Route {
             if(class_exists($arrayClass[0])) {
                 if(method_exists($arrayClass[0], $arrayClass[1])) {
                     $this->auth_class = $arrayClass[0];
-                    $this->auth_method = $arrayClass[1];
+                    $this->auth_func = $arrayClass[1];
                     $this->auth_expected = $data['auth']['expected'] ?? null;
                     if (isset($data['auth']['redirect'])) $this->auth_redirect = $data['auth']['redirect'];
-                }else throw new UndefinedRouteMethodException($name, $arrayClass[1]);
+                }else throw new UndefinedRouteFuncException($name, $arrayClass[1]);
             } else throw new UndefinedRouteClassException($name);
         }
+        // GET HTTP REQUEST METHOD
         if(isset($data['method'])) {
             $this->method = $data['method'];
         }
@@ -121,6 +138,7 @@ class Route {
      * Find parameter of route
      */
     private function findParameters() {
+        $this->parameters = array();
         $tempArrayURL = explode('/', $this->url);
         $arrayURL = array();
         $count = null;
@@ -135,19 +153,6 @@ class Route {
                 $this->parameters[] = $item;
             }
         }
-    }
-
-    /**
-     * Load class of route
-     * @return WebPage
-     * @throws ClassNotExtendsControllerException
-     */
-    public function load(): WebPage {
-        if(is_null($this->webpage)) {
-            $class = new $this->class();
-            if(is_subclass_of($class, 'System\Controller')) $this->webpage = new $this->class(); else throw new ClassNotExtendsControllerException(get_class($class), $this->url);
-        }
-        return $this->webpage;
     }
 
     /**
@@ -185,73 +190,83 @@ class Route {
     }
 
     /**
-     * Compare route with url given
-     * @param String $url browser url
-     * @return array|null list of parameters
+     * Load request in route
+     * @param Request $r Request to load
+     * @return Route
      * @throws IncorrectParameterRouteException
+     * @throws IncorrectRequestMethodException
      */
-    public function checkURL(String $url): ?array {
-        $tempArrayRoute = explode('/', $this->url);
-        $tempArrayURL = explode('/', $url);
-        $arrayURL = array();
-        $arrayRoute = array();
-        $paramsURL = array();
-        // Clean URL route
-        foreach (array_filter($tempArrayRoute, function($a) {
+    public function load(Request $r): ?self {
+        $url = $r->getUri();
+        // PREPARE COMPONENTS OF URLs
+        $urlComponentsRoute = explode('/', $this->url);
+        $urlComponentsRequest = explode('/', $url);
+        // CLEAN COMPONENTS
+        $urlComponentsRoute = array_values(array_filter($urlComponentsRoute, function($a) {
             return !empty($a);
-        }) as $key => $value) $arrayRoute[]= $value;
-        // Clean URL user
-        foreach (array_filter($tempArrayURL, function($a) {
+        }));
+        $urlComponentsRequest = array_values(array_filter($urlComponentsRequest, function($a) {
             return !empty($a);
-        }) as $key => $value) $arrayURL[] = $value;
-        // Check sizes of URLS
-        if(sizeof($arrayURL) != sizeof($arrayRoute)) return null;
-        if(empty($arrayURL) && empty($arrayRoute)) return array();
-        // Compare URLS
-        for($i = 0; $i < sizeof($arrayRoute); $i++) {
-            $itemRoute = $arrayRoute[$i];
-            $itemURL = $arrayURL[$i];
-            // Check if parameters is present
-            if(preg_match('/^{[a-zA-Z0-9]*}$/', $itemRoute)) {
-                $param = substr($itemRoute, 1, strlen($itemRoute)-2);
-                // Check param with regex defined in routing file
-                if(isset($this->regex[$param])) {
-                    $regex = $this->regex[$param];
-                    if(!preg_match("/^$regex$/", $itemURL)) throw  new IncorrectParameterRouteException($url, $param);
+        }));
+        // COMPARE SIZE OF COMPONENTS
+        $sizeComparaison = ($sizeComponentsRequest = sizeof($urlComponentsRequest)) <=> ($sizeComponentRoute = sizeof($urlComponentsRoute));
+        if($sizeComparaison === 1) return null;
+        elseif ($sizeComparaison === -1) return null;
+        // COMPARE COMPONENTS PARAMETERS
+        $parameters = array();
+        if(!empty($urlComponentsRequest) && !empty($urlComponentsRoute)) {
+            for ($i = 0; $i < sizeof($urlComponentsRoute); $i++) {
+                $routeComponent = $urlComponentsRoute[$i];
+                $requestComponent = $urlComponentsRequest[$i];
+                // EXTRACT PARAMETER IF EXIST
+                if (preg_match('/^{[a-zA-Z0-9]*}$/', $routeComponent)) {
+                    // EXTRACT NAME OF PARAMETER
+                    $param = substr($routeComponent, 1, strlen($routeComponent) - 2);
+                    // CHECK PARAMETER REGEX
+                    if (isset($this->regex[$param])) {
+                        $regex = $this->regex[$param];
+                        if (!preg_match("/^$regex$/", $requestComponent)) throw  new IncorrectParameterRouteException($url, $param);
+                    }
+                    // SAVE PARAMETER
+                    $parameters[$param] = $requestComponent;
+                } else if ($routeComponent != $requestComponent) {
+                    return null;
                 }
-                // Save parameter
-                $paramsURL[$param] = $itemURL;
-            }
-            else if($itemRoute != $itemURL) {
-                return null;
             }
         }
-        return $paramsURL;
+        // COMPARE HTTP METHOD BETWEEN ROUTE AND REQUEST
+        if(!is_null($r) && !is_null($this->method) && ($findMethod = $r->getMethod()) != ($attempt = $this->method)) throw new IncorrectRequestMethodException($findMethod, $attempt);
+        $this->associated_request = $r;
+        $this->associated_parameters = $parameters;
+        return $this;
     }
 
     /**
      * Launch action of route
-     * @param array $parameters parameters to method
-     * @return Response Response of web page
-     * @throws ClassNotExtendsControllerException
-     * @throws \Exception
+     * @return void Response of web page
+     * @throws Exceptions\RouteNotFoundException
+     * @throws IncorrectAuthenticationException
+     * @throws UndefinedRouteClassException
+     * @throws UndefinedRouteFuncException
+     * @throws UndefinedRouteUrlException
      */
-    public function action(array $parameters = array()): Response {
-        if(!is_null($this->auth_class) && !is_null($this->auth_method)) {
-            $authClass = new $this->auth_class();
-            $returnAuthValue = call_user_func(array($authClass, $this->auth_method));
-            if($this->auth_expected != $returnAuthValue) {
-                if(!is_null($this->auth_redirect) && !empty($this->auth_redirect)) {
-                    $newRoute = Router::getInstance()->find($this->auth_redirect);
-                    if(is_null($newRoute->parameters)) {
-                        return new Response("", Response::HTTP_CODE_TEMPORARY_REDIRECTION, ['Location' => $newRoute->url]);
+    public function exec(): void {
+        if (!is_null($r = $this->associated_request) && is_array($p = $this->associated_parameters)) {
+            if (!is_null($this->auth_class) && !is_null($this->auth_func)) {
+                if ($this->auth_expected != ($authReturnedValue = call_user_func(array(new $this->auth_class(), $this->auth_func)))) {
+                    if (!is_null($this->auth_redirect) && !empty($this->auth_redirect)) {
+                        $redirection = Router::getInstance()->find($this->auth_redirect);
+                        if (is_null($redirection->parameters) || empty($redirection->parameters)) {
+                            echo new Response("", Response::HTTP_CODE_TEMPORARY_REDIRECTION, ['Location' => $redirection->url]);
+                            return;
+                        }
                     }
+                    throw new IncorrectAuthenticationException($this->name, $this->auth_func, $authReturnedValue, $this->auth_expected);
                 }
-                return new Response("", Response::HTTP_CODE_DENIED);
             }
+            echo call_user_func_array(array(new $this->class, $this->func), array_merge(array($r), $p));
+            return;
         }
-        $this->load();
-        return call_user_func_array(array($this->webpage, $this->action), $parameters);
     }
 
 }

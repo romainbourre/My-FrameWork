@@ -6,10 +6,9 @@ use System\Exceptions\IncorrectFormatConfigurationFileException;
 use System\Exceptions\IncorrectRequestMethodException;
 use System\Exceptions\RouteNotFoundException;
 use System\Http\Request;
-use System\Http\Response;
 use System\Exceptions\HttpNotFoundException;
 use System\Exceptions\UndefinedRouteClassException;
-use System\Exceptions\UndefinedRouteMethodException;
+use System\Exceptions\UndefinedRouteFuncException;
 
 /**
  * Class Router
@@ -46,34 +45,39 @@ class Router {
     /**
      * Found web page to url
      * @param Request $request web request
-     * @return Response
+     * @return Route
+     * @throws Exceptions\UndefinedRouteUrlException
      * @throws HttpNotFoundException
      * @throws IncorrectFormatConfigurationFileException
-     * @throws IncorrectRequestMethodException
-     * @throws \Exception
+     * @throws UndefinedRouteClassException
+     * @throws UndefinedRouteFuncException
      */
-    public function findResponseURL(Request $request): Response {
+    public function findRouteByRequest(Request $request): Route {
         if(!is_null($this->_conf_routing)) {
             $bestRoute = null;
+            $tempParam = null;
             $tempException = null;
+            $order = array();
             foreach ($this->_conf_routing as $name => $data) {
-                if(!is_array($data)) throw new IncorrectFormatConfigurationFileException(self::ROUTING_CONF);
+                if (!is_array($data)) throw new IncorrectFormatConfigurationFileException(self::ROUTING_CONF);
+                $route = new Route($name, $data);
                 try {
-                    $route = new Route($name, $data);
-                    if (!is_null($params = $route->checkURL($request->getUri()))) {
-                        if(!is_null($expectMethod = $route->getHttpMethod()) && $expectMethod != ($findMethod = $request->getMethod())) throw new IncorrectRequestMethodException($findMethod, $expectMethod);
-                        $bestRoute = $route->action(array_merge(array($request), array_values($params)));
-                        $tempException = null;
+                    if($route->load($request)){
+                        $order[0][] = array($route, null);
                     }
-                }
-                catch (IncorrectRequestMethodException $e) {
-                    throw $e;
-                }
-                catch (\Exception $e) {
-                    $tempException = $e;
+                } catch (IncorrectRequestMethodException $e) {
+                    $order[1][] = array($route, $e);
+                } catch (Exceptions\IncorrectParameterRouteException $e) {
+                    $order[2][] = array($route, $e);
                 }
             }
-            if(!is_null($bestRoute) && is_null($tempException)) return $bestRoute; else if (!is_null($tempException)) throw $tempException;
+            ksort($order);
+            foreach ($order as $r) {
+                foreach ($r as $rout) {
+                    if(is_null($rout[1])) return $rout[0]; else throw $rout[1];
+                }
+            }
+
         }
         throw new HttpNotFoundException($request->getUri());
     }
@@ -84,7 +88,7 @@ class Router {
      * @return Route
      * @throws Exceptions\UndefinedRouteUrlException
      * @throws UndefinedRouteClassException
-     * @throws UndefinedRouteMethodException
+     * @throws UndefinedRouteFuncException
      * @throws RouteNotFoundException
      * @throws \Exception
      */
@@ -103,9 +107,5 @@ class Router {
         if(is_null(self::$_instance)) self::$_instance = new self();
         return self::$_instance;
     }
-
-
-
-
 
 }

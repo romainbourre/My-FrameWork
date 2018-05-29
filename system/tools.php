@@ -11,7 +11,7 @@
  * @throws \System\Exceptions\TooFewParametersException
  * @throws \System\Exceptions\TooManyParametersException
  * @throws \System\Exceptions\UndefinedRouteClassException
- * @throws \System\Exceptions\UndefinedRouteMethodException
+ * @throws \System\Exceptions\UndefinedRouteFuncException
  * @throws \System\Exceptions\UndefinedRouteUrlException
  * @throws Exception
  */
@@ -26,4 +26,24 @@ function url(String $nameRoute, ...$params): string {
  */
 function asset(String $file): string {
     return 'http://' . $_SERVER['HTTP_HOST'] . "/assets/$file";
+}
+
+/**
+ * Get POST, GET of FILE variable
+ * @param string $var name of variable
+ * @param bool $secure security activation
+ * @return null|array|string content of var
+ */
+function get(string $var, bool $secure = true) {
+    return \System\Http\Request::getOnAll($var, $secure);
+}
+
+/**
+ * Get application variables
+ * @param string $name
+ * @return mixed|null
+ */
+function vars(string $name) {
+    if(isset(\System\System::get()->getVars()[$name])) return \System\System::get()->getVars()[$name];
+    return null;
 }
