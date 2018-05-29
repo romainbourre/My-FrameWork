@@ -45,9 +45,13 @@
 
                     ?>
                     <h5 class="mb-1"><b>#<?= $num ?> </b><?= $function ?></h5>
-                    <small>line <?= $trace['line'] ?></small>
+                    <?php if(isset($trace['line'])): ?>
+                        <small>line <?= $trace['line'] ?></small>
+                    <?php endif; ?>
                 </div>
-                <p class="mb-1"><?= $trace['file'] ?></p>
+                <?php if(isset($trace['file'])): ?>
+                    <p class="mb-1"><?= $trace['file'] ?></p>
+                <?php endif; ?>
                 <!--<small>Donec id elit non mi porta.</small>-->
             </a>
         <?php endforeach; ?>

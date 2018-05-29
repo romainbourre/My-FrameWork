@@ -8,7 +8,7 @@ namespace System\Exceptions;
  * @package System\Exceptions
  * @author Romain Bourré
  */
-class UndefinedRouteMethodException extends \Exception {
+class UndefinedRouteFuncException extends \Exception {
 
     /**
      * UndefinedRouteMethodException constructor.

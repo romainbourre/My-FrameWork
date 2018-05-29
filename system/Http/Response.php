@@ -11,8 +11,9 @@ namespace System\Http;
 class Response {
 
     public const HTTP_CODE_SUCCESS = 200;
-    public const HTTP_CODE_PERMANENT_REDIRECTION = 301;
-    public const HTTP_CODE_TEMPORARY_REDIRECTION = 302;
+    public const HTTP_CODE_TEMPORARY_REDIRECTION = 307;
+    public const HTTP_CODE_PERMANENT_REDIRECTION = 308;
+    public const HTTP_CODE_BAD_REQUEST = 400;
     public const HTTP_CODE_NOT_AUTH = 401;
     public const HTTP_CODE_DENIED = 403;
     public const HTTP_CODE_NOT_FOUND = 404;

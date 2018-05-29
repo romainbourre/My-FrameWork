@@ -3,14 +3,12 @@
 namespace System;
 
 use System\Exceptions\IncorrectFormatConfigurationFileException;
+use System\Exceptions\IncorrectRequestMethodException;
 use System\Exceptions\RouteNotFoundException;
 use System\Http\Request;
-use System\Http\Response;
-use System\Exceptions\ClassNotExtendsControllerException;
 use System\Exceptions\HttpNotFoundException;
-use System\Exceptions\IncorrectParameterRouteException;
 use System\Exceptions\UndefinedRouteClassException;
-use System\Exceptions\UndefinedRouteMethodException;
+use System\Exceptions\UndefinedRouteFuncException;
 
 /**
  * Class Router
@@ -35,47 +33,53 @@ class Router {
      * Routing yaml content
      * @var array|null
      */
-    private $routing = null;
+    private $_conf_routing = null;
 
     /**
      * Router constructor.
      */
     private function __construct() {
-        $this->routing = yaml_parse(file_get_contents(ROOT . self::ROUTING_CONF));
+        $this->_conf_routing = yaml_parse(file_get_contents(ROOT . self::ROUTING_CONF));
     }
 
     /**
      * Found web page to url
      * @param Request $request web request
-     * @return Response
+     * @return Route
      * @throws Exceptions\UndefinedRouteUrlException
      * @throws HttpNotFoundException
+     * @throws IncorrectFormatConfigurationFileException
      * @throws UndefinedRouteClassException
-     * @throws UndefinedRouteMethodException
-     * @throws IncorrectParameterRouteException
-     * @throws ClassNotExtendsControllerException
-     * @throws \Exception
+     * @throws UndefinedRouteFuncException
      */
-    public function findResponseURL(Request $request): Response {
-        if(!is_null($this->routing)) {
+    public function findRouteByRequest(Request $request): Route {
+        if(!is_null($this->_conf_routing)) {
             $bestRoute = null;
+            $tempParam = null;
             $tempException = null;
-            foreach ($this->routing as $name => $data) {
-                if(!is_array($data)) throw new IncorrectFormatConfigurationFileException(self::ROUTING_CONF);
+            $order = array();
+            foreach ($this->_conf_routing as $name => $data) {
+                if (!is_array($data)) throw new IncorrectFormatConfigurationFileException(self::ROUTING_CONF);
+                $route = new Route($name, $data);
                 try {
-                    $route = new Route($name, $data);
-                    if (!is_null($params = $route->checkURL($request->getUrl()))) {
-                        $bestRoute = $route->action(array_merge(array($request), array_values($params)));
-                        $tempException = null;
+                    if($route->load($request)){
+                        $order[0][] = array($route, null);
                     }
-                }
-                catch (\Exception $e) {
-                    $tempException = $e;
+                } catch (IncorrectRequestMethodException $e) {
+                    $order[1][] = array($route, $e);
+                } catch (Exceptions\IncorrectParameterRouteException $e) {
+                    $order[2][] = array($route, $e);
                 }
             }
-            if(!is_null($bestRoute) && is_null($tempException)) return $bestRoute; else if (!is_null($tempException)) throw $tempException;
+            ksort($order);
+            foreach ($order as $r) {
+                foreach ($r as $rout) {
+                    if(is_null($rout[1])) return $rout[0]; else throw $rout[1];
+                }
+            }
+
         }
-        throw new HttpNotFoundException($request->getUrl());
+        throw new HttpNotFoundException($request->getUri());
     }
 
     /**
@@ -84,13 +88,13 @@ class Router {
      * @return Route
      * @throws Exceptions\UndefinedRouteUrlException
      * @throws UndefinedRouteClassException
-     * @throws UndefinedRouteMethodException
+     * @throws UndefinedRouteFuncException
      * @throws RouteNotFoundException
      * @throws \Exception
      */
     public function find(string $nameRoute): Route {
-        if(!is_null($this->routing)) {
-            if(isset($this->routing[$nameRoute])) return new Route($nameRoute, $this->routing[$nameRoute]);
+        if(!is_null($this->_conf_routing)) {
+            if(isset($this->_conf_routing[$nameRoute])) return new Route($nameRoute, $this->_conf_routing[$nameRoute]);
         }
         throw new RouteNotFoundException($nameRoute);
     }
@@ -103,9 +107,5 @@ class Router {
         if(is_null(self::$_instance)) self::$_instance = new self();
         return self::$_instance;
     }
-
-
-
-
 
 }
