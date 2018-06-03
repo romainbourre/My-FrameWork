@@ -2,8 +2,8 @@
 
 namespace System;
 
-use System\Exceptions\IncorrectAuthenticationException;
 use System\Exceptions\ClassNotExtendsControllerException;
+use System\Exceptions\IncorrectAuthenticationException;
 use System\Exceptions\IncorrectFormatConfigurationFileException;
 use System\Exceptions\IncorrectParameterRouteException;
 use System\Exceptions\IncorrectRequestMethodException;
@@ -195,6 +195,8 @@ class Route {
      * @return Route
      * @throws IncorrectParameterRouteException
      * @throws IncorrectRequestMethodException
+     * @throws TooFewParametersException
+     * @throws TooManyParametersException
      */
     public function load(Request $r): ?self {
         $url = $r->getUri();

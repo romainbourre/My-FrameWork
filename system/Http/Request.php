@@ -36,6 +36,16 @@ class Request {
     private $method;
 
     /**
+     * @var mixed Content of request
+     */
+    private $content;
+
+    /**
+     * @var string mime type
+     */
+    private $mime;
+
+    /**
      * Request constructor.
      */
     public function __construct() {
@@ -44,6 +54,8 @@ class Request {
         $this->encrypt_uri = $this->uri;
         $this->headers = apache_request_headers();
         $this->method = $_SERVER['REQUEST_METHOD'];
+        $this->content = file_get_contents("php://input");
+        $this->mime = $_SERVER["CONTENT_TYPE"] ?? null;
         if(!isset($_SESSION[self::SESSION_VAR][$this->encrypt_uri])) {
             $_SESSION[self::SESSION_VAR][$this->encrypt_uri] = array();
             $_SESSION[self::SESSION_VAR][$this->encrypt_uri]['FILES'] = array();
@@ -142,6 +154,20 @@ class Request {
      */
     public function getMethod(): string {
         return $this->method;
+    }
+
+    /**
+     * @return mixed get content of request
+     */
+    public function getContent() {
+        return $this->content;
+    }
+
+    /**
+     * @return string get content type of request
+     */
+    public function getMime(): string {
+        return $this->mime;
     }
 
     /**
