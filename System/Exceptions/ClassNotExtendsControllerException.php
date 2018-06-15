@@ -4,7 +4,7 @@ namespace System\Exceptions;
 
 /**
  * Class ClassNotExtendsControllerException
- * Raise when web page not extend system Controller
+ * Raise when web page not extend System Controller
  * @package System\Exceptions
  * @author Romain Bourré
  */

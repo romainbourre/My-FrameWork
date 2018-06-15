@@ -31,7 +31,7 @@ class System {
     private const APP_DEV_FILE = "config/application/developers.yml";
 
     /**
-     * Instance of system
+     * Instance of System
      * @var System|null
      */
     private static $_instance = null;

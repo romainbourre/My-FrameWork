@@ -17,7 +17,7 @@ use System\Http\Response;
 
 /**
  * Class Route
- * Represent route of routing system
+ * Represent route of routing System
  * @package System
  * @author Romain Bourré
  */

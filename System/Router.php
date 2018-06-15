@@ -12,7 +12,7 @@ use System\Exceptions\UndefinedRouteFuncException;
 
 /**
  * Class Router
- * Router system for web page
+ * Router System for web page
  * @package System
  * @author Romain Bourré
  */
